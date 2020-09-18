@@ -94,7 +94,6 @@ contract FanticaDApp is Ownable {
 
     mapping (address => uint256) _daiBalances;
     mapping (address => bool) _subscriptionAccessIsFree;
-    mapping (address => bool) _contentIsFree;
     mapping (address => mapping (address => SubscriptionPeriod)) private _subscriptionPeriod;
     mapping (address => mapping (address => uint256)) private _subscriptionExpires;
     mapping (address => mapping (SubscriptionPeriod => uint256)) private _subscriptionPrice;
@@ -106,6 +105,7 @@ contract FanticaDApp is Ownable {
     mapping (address => mapping(address => mapping(uint256 => bool))) private _purchases;
 
     event Purchase(address indexed creator, uint256 indexed contentId, uint256 price);
+    event Tips(address indexed creator, uint256 indexed contentId, uint256 amount);
     event Subscribe(address indexed consumer, address indexed creator, uint256 price, uint256 expires);
     event SubscriptionRenewal(address indexed consumer, address indexed creator, uint256 price, uint256 expires);
     event SubscriptionCancel(address indexed consumer, address indexed creator);
@@ -132,10 +132,6 @@ contract FanticaDApp is Ownable {
         return _subscriptionAccessIsFree[creator];
     }
 
-    function contentIsFree(address creator) external view returns (bool) {
-        return _contentIsFree[creator];
-    }
-
     function subscriptionPeriod(address consumer, address creator) external view returns (SubscriptionPeriod) {
         return _subscriptionPeriod[consumer][creator];
     }
@@ -154,7 +150,7 @@ contract FanticaDApp is Ownable {
     }
 
     function contentPrice(address creator) public view returns (uint256) {
-        return _contentIsFree[creator] ? 0 : _contentPrice[creator] > 0 ? _contentPrice[creator] : DEFAULT_CONTENT_PRICE;
+        return _subscriptionAccessIsFree[creator] ? 0 : _contentPrice[creator] > 0 ? _contentPrice[creator] : DEFAULT_CONTENT_PRICE;
     }
 
     function contentPurchaised(address consumer, address creator, uint256 contentId) external view returns (bool) {
@@ -164,11 +160,6 @@ contract FanticaDApp is Ownable {
     function setSubscriptionPrice(uint256 monthlyPrice, uint256 annualPrice) external {
         _subscriptionPrice[_msgSender()][SubscriptionPeriod.Monthly] = monthlyPrice;
         _subscriptionPrice[_msgSender()][SubscriptionPeriod.Annual] = annualPrice;
-    }
-
-    function setContentIsFree(bool isFree) external {
-        require(_contentIsFree[_msgSender()] != isFree, "The value is already set.");
-        _contentIsFree[_msgSender()] = isFree;
     }
 
     function setSubscriptionAccess(bool isFree) external {
@@ -184,6 +175,20 @@ contract FanticaDApp is Ownable {
     // ===========================================================
 	// Payable
 	// ===========================================================
+
+    function sendTips(address creator, uint256 contentId, uint256 amount) external {
+        require(creator != _msgSender(), "You can't send yourself tips.");
+        require(amount > 0, "The amount is zero.");
+
+        IERC20(DAI).transferFrom(_msgSender(), address(this), amount);
+
+        // Charging fees, updating DAI balances
+        uint256 fee = amount.mul(5).div(100);
+        _daiBalances[address(this)] = _daiBalances[address(this)].add(fee);
+        _daiBalances[creator] = _daiBalances[creator].add(amount).sub(fee);
+
+        emit Tips(creator, contentId, amount);
+    }
 
     function purchase(address creator, uint256 contentId) external {
         require(creator != _msgSender(), "You can't buy from yourself.");
