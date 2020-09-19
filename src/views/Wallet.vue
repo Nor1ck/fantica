@@ -1,5 +1,5 @@
 <template>
-  <div class="home">
+  <div class="wallet">
     <h1>Wallet</h1>
     <p>Availabe DAI: {{ balance }}</p>
     <v-btn v-if="balance > 0" rounded color="purple accent-1" @click="withdrawDAI()">Withdraw</v-btn>
