@@ -4,8 +4,13 @@ import './registerServiceWorker'
 import router from './router'
 import store from './store'
 import vuetify from '@/plugins/vuetify'
+import axios from "axios";
 
 Vue.config.productionTip = false
+Vue.prototype.$http = axios;
+Vue.prototype.$HOST = 'http://localhost:3005';
+const VueCookie = require('vue-cookie');
+Vue.use(VueCookie);
 
 new Vue({
   router,
