@@ -153,7 +153,7 @@ contract FanticaDApp is Ownable {
         return _subscriptionAccessIsFree[creator] ? 0 : _contentPrice[creator] > 0 ? _contentPrice[creator] : DEFAULT_CONTENT_PRICE;
     }
 
-    function contentPurchaised(address consumer, address creator, uint256 contentId) external view returns (bool) {
+    function contentPurchased(address consumer, address creator, uint256 contentId) external view returns (bool) {
         return _purchases[consumer][creator][contentId];
     }
 
@@ -180,6 +180,8 @@ contract FanticaDApp is Ownable {
         require(creator != _msgSender(), "You can't send yourself tips.");
         require(amount > 0, "The amount is zero.");
 
+        require(IERC20(DAI).allowance(_msgSender(), address(this)) >= amount, "DAI insufficient allowance.");
+
         IERC20(DAI).transferFrom(_msgSender(), address(this), amount);
 
         // Charging fees, updating DAI balances
@@ -195,6 +197,8 @@ contract FanticaDApp is Ownable {
         require(!_purchases[_msgSender()][creator][contentId], "The content is already purchased.");
         uint256 price = contentPrice(creator);
         require(price > 0, "The content is free.");
+
+        require(IERC20(DAI).allowance(_msgSender(), address(this)) >= price, "DAI insufficient allowance.");
 
         IERC20(DAI).transferFrom(_msgSender(), address(this), price);
 
