@@ -92,8 +92,8 @@ contract FanticaDApp is Ownable {
     uint256 private DEFAULT_MONTLY_PRICE =  10 ether; //  10 DAI
     uint256 private DEFAULT_ANNUAL_PRICE = 100 ether; // 100 DAI
 
-    mapping (address => uint256) _daiBalances;
-    mapping (address => bool) _subscriptionAccessIsFree;
+    mapping (address => uint256) private _daiBalances;
+    mapping (address => bool) private _subscriptionAccessIsFree;
     mapping (address => mapping (address => SubscriptionPeriod)) private _subscriptionPeriod;
     mapping (address => mapping (address => uint256)) private _subscriptionExpires;
     mapping (address => mapping (SubscriptionPeriod => uint256)) private _subscriptionPrice;
