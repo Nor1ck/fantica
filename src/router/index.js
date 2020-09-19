@@ -16,6 +16,11 @@ Vue.use(VueRouter)
     component: () => import(/* webpackChunkName: "about" */ '../views/Profile.vue')
   },
   {
+    path: '/wallet',
+    name: 'Wallet',
+    component: () => import(/* webpackChunkName: "about" */ '../views/Wallet.vue')
+  },
+  {
     path: '/about',
     name: 'About',
     component: () => import(/* webpackChunkName: "about" */ '../views/About.vue')
@@ -26,9 +31,14 @@ Vue.use(VueRouter)
     component: () => import(/* webpackChunkName: "about" */ '../views/NewPost.vue')
   },
   {
-    path: '/:username',
+    path: '/feed',
     name: 'Feed',
     component: () => import(/* webpackChunkName: "about" */ '../views/Feed.vue')
+  },
+  {
+    path: '/:username',
+    name: 'UserPage',
+    component: () => import(/* webpackChunkName: "about" */ '../views/UserPage.vue')
   },
 ]
 
