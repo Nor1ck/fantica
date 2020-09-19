@@ -1,4 +1,4 @@
-# fantica
+# Fantica
 
 ## Project setup
 ```
