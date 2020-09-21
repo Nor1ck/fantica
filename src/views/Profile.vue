@@ -1,7 +1,7 @@
 <template>
   <div class="home">
-    <p v-if="profile.username !== null">{{metamaskAddress}}</p>
-    <div v-if="profile.username !== null">
+    <p v-if="profile.displayname !== null">{{metamaskAddress}}</p>
+    <div v-if="profile.displayname !== null">
         <img src="../assets/cover.png" width="400" alt="cover" @click="uploadCoverImage()" />
         <br>
         <img src="../assets/test_pic.jpg" width="100" alt="profile photo" @click="uploadProfilePhoto()" />
@@ -20,7 +20,6 @@
                 <v-btn :loading="setIsLoading" outlined rounded small color="indigo" @click="setSubscriptionPrice()">Set</v-btn>
             </div>
 
-            <v-text-field v-model="profile.username" label="@username"></v-text-field>
             <v-text-field v-model="profile.displayname" label="Display name"></v-text-field>
             <v-text-field v-model="profile.about" label="About"></v-text-field>
             <v-text-field v-model="profile.location" label="Location"></v-text-field>
@@ -38,7 +37,7 @@ export default {
   components: {},
   data() {
     return {
-        subscriptionAccessPaid: false,
+        subscriptionAccessPaid: true,
         saveChangesIsLoading: false,
         switchIsLoading: false,
         setIsLoading: false,

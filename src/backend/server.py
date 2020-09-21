@@ -28,7 +28,7 @@ ALLOWED_HEADERS = ','.join((
     'x-csrftoken',
 ))
 
-PROFILE_KEYS = ['username', 'displayname', 'about', 'location', 'website']
+PROFILE_KEYS = ['displayname', 'about', 'location', 'website']
 POST_KEYS = ['message', 'media']
 
 
@@ -76,8 +76,7 @@ def mongo_find_posts(collection, skip=0, limit=10, **kwargs):
 def create_profile(address):
     profile = {
         '_id': address,
-        'username': address,
-        'displayname': '',
+        'displayname': address,
         'about': '',
         'location': '',
         'website': '',
@@ -115,12 +114,12 @@ async def api_update_profile(req):
         return web.json_response({'msg': 'Token not found.'}, status=404)
     if len(set(PROFILE_KEYS) - set(data.keys())) > 0:
         return web.json_response({'msg': 'Invalid keys. Required: {}'.format(PROFILE_KEYS)}, status=400)
+    if len(data['displayname']) < 5:
+        return web.json_response({'msg': 'The min length for displayname is 5 letters.'}, status=400)
+    if '0x' in data['displayname'] and len(data['displayname']) >= 42 and data['displayname'] != address:
+        return web.json_response({'msg': "It is forbidden to use other people's addresses."}, status=403)
     profile = {key: data[key] for key in data.keys() if key in PROFILE_KEYS}
     profile['_id'] = address
-    stored_profile = mongo_find_one('profile', username=profile['username'])
-    if stored_profile and stored_profile['_id'] != address:
-        return web.json_response({'msg': 'The username is already taken.'}, status=403)
-    # TODO validate username
     mongo_set('profile', profile)
     return web.json_response({})
 
