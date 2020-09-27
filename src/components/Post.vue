@@ -24,7 +24,7 @@
         <v-card-subtitle class="card-text ta-l">{{post.message}}</v-card-subtitle>
 
         <v-card-actions v-if="post.address != metamaskAddress">
-          <v-btn color="primary" text @click="purchase()">Buy for</v-btn>
+          <v-btn color="primary" text @click="purchase()">Buy for ${{ contentPrice }}</v-btn>
           <v-btn color="primary" text @click="showSubscribe = true">Subscribe</v-btn>
           <v-btn color="primary" text @click="showTips = true">Send Tips</v-btn>
         </v-card-actions>
@@ -38,7 +38,7 @@
   </v-row>
 
   <DialogYesNo :show="showDelete" :callback="deletePost"/>
-  <DialogSelect :show="showSubscribe" :callback="subscribe"/>
+  <SelectPeriod :address="post.address" :show="showSubscribe" :callback="subscribe"/>
   <DialogInput :show="showTips" :callback="sendTips"/>
 </div>
 
@@ -46,13 +46,13 @@
 
 <script>
 import DialogYesNo from "@/components/dialogs/DialogYesNo.vue";
-import DialogSelect from "@/components/dialogs/DialogSelect.vue";
+import SelectPeriod from "@/components/dialogs/SelectPeriod.vue";
 import DialogInput from "@/components/dialogs/DialogInput.vue";
 
 export default {
   components: {
     DialogYesNo,
-    DialogSelect,
+    SelectPeriod,
     DialogInput,
   },
   props: {
@@ -65,6 +65,7 @@ export default {
       showSubscribe: false,
       showTips: false,
       avatarURL: null,
+      contentPrice: '',
     }
   },
   computed: {
@@ -88,6 +89,14 @@ export default {
     },
   },
   methods: {
+    async getContentPrice() {
+      let contract = new window.web3.eth.Contract(
+        this.fanticaDAppABI,
+        this.fanticaDAppAddress
+      );
+      let contentPrice = await contract.methods.contentPrice(this.post.address).call();
+      this.contentPrice = Number(window.web3.utils.fromWei(contentPrice, 'ether')).toFixed(2)
+    },
     async subscribe(result, period) {
       this.showSubscribe = false;
       if (!result) return
@@ -141,6 +150,7 @@ export default {
     }
   },
   mounted() {
+    this.getContentPrice()
     this.avatarURL = this.$HOST + '/static/avatar/' + this.post.address + '/avatar.jpg'
   }
 };
