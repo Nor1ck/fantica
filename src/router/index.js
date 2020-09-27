@@ -36,7 +36,7 @@ Vue.use(VueRouter)
     component: () => import(/* webpackChunkName: "about" */ '../views/Feed.vue')
   },
   {
-    path: '/:username',
+    path: '/:address',
     name: 'UserPage',
     component: () => import(/* webpackChunkName: "about" */ '../views/UserPage.vue')
   },
