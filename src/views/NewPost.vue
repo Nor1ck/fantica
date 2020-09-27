@@ -7,11 +7,25 @@
     </v-row>
     <v-row justify="center">
       <v-col cols="12" sm="6" md="3" class="pt-0">
-        <v-row>
-          <v-col cols="12" sm="6" md="3" class="pt-0">
-            <v-btn outlined small color="purple">Add media</v-btn>
-          </v-col>
-        </v-row>
+        <v-file-input
+          multiple
+          chips
+          outlined
+          v-model="media"
+          accept="image/png, image/jpeg, image/bmp"
+          placeholder="Add a media"
+          prepend-icon="mdi-camera"
+          label="Media">
+          <template v-slot:selection="{ text }">
+            <v-chip
+              small
+              label
+              color="primary"
+            >
+              {{ text }}
+            </v-chip>
+          </template>
+        ></v-file-input>
       </v-col>
     </v-row>
     <v-btn :loading="loading" @click="createPost()" outlined rounded color="primary">post</v-btn>
@@ -26,8 +40,9 @@ export default {
       loading: false,
       post: {
         'message': null,
-        'media': [],
-      }
+        'media_count': 0,
+      },
+      media: [],
     };
   },
   methods: {
@@ -35,13 +50,30 @@ export default {
       if (this.post.message) {
         this.loading = true;
         try {
-          await this.$http.post(this.$HOST + '/api/new_post', JSON.stringify(this.post), { withCredentials: true });
+          this.post.media_count = this.media.length;
+          let resp = await this.$http.post(this.$HOST + '/api/new_post', JSON.stringify(this.post), { withCredentials: true });
+          if (resp.data.secret) {
+            for (let index = 0; index < this.media.length; index++) {
+              const media = this.media[index];
+              this.uploadMedia(resp.data.secret, index, media)
+            }
+          }
         } finally {
           this.loading = false;
           this.post.message = null;
-          this.post.media = [];
+          this.media = [];
         }
       }
+    },
+    async uploadMedia(secret, index, media) {
+      var formData = new FormData();
+      formData.append("image", media);
+      await this.$http.post(this.$HOST + '/api/upload/media/' + secret + '/' + index, formData, {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+      });
     },
   },
 };
