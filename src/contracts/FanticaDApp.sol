@@ -89,7 +89,7 @@ contract FanticaDApp is Ownable {
 
     address private DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     uint256 private DEFAULT_CONTENT_PRICE =  1 ether; //   1 DAI (ether stands for 18 decimals)
-    uint256 private DEFAULT_MONTLY_PRICE =  10 ether; //  10 DAI
+    uint256 private DEFAULT_MONTHLY_PRICE =  10 ether; //  10 DAI
     uint256 private DEFAULT_ANNUAL_PRICE = 100 ether; // 100 DAI
 
     mapping (address => uint256) private _daiBalances;
@@ -146,7 +146,7 @@ contract FanticaDApp is Ownable {
         if (period == SubscriptionPeriod.Annual) {
             return _subscriptionAccessIsFree[creator] ? 0 : price > 0 ? price : DEFAULT_ANNUAL_PRICE;
         }
-        return _subscriptionAccessIsFree[creator] ? 0 : price > 0 ? price : DEFAULT_MONTLY_PRICE;
+        return _subscriptionAccessIsFree[creator] ? 0 : price > 0 ? price : DEFAULT_MONTHLY_PRICE;
     }
 
     function contentPrice(address creator) public view returns (uint256) {
