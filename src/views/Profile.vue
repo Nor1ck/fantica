@@ -176,13 +176,13 @@ export default {
         this.subscriptionPrice();
       }
     },
-    uploadCover() {
+    async uploadCover() {
       this.coverUploading = true;
       try {
         if (this.cover) {
           var formData = new FormData();
           formData.append("image", this.cover);
-          this.$http.post(this.$HOST + '/api/upload/cover', formData, {
+          await this.$http.post(this.$HOST + '/api/upload/cover', formData, {
               withCredentials: true,
               headers: {
                 'Content-Type': 'multipart/form-data'
