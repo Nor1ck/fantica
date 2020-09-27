@@ -6,6 +6,7 @@ import os
 import pathlib
 import redis
 import secrets
+import shutil
 
 from aiohttp import web
 from pymongo import MongoClient
@@ -32,7 +33,7 @@ ALLOWED_HEADERS = ','.join((
 ))
 
 PROFILE_KEYS = ['username', 'about', 'location', 'website']
-POST_KEYS = ['message', 'media']
+POST_KEYS = ['message', 'media_count']
 
 
 def set_cors_headers(request, response):
@@ -142,8 +143,8 @@ async def api_new_post(req):
         return web.json_response({'msg': 'Token not found.'}, status=404)
     if len(set(POST_KEYS) - set(data.keys())) > 0:
         return web.json_response({'msg': 'Invalid keys. Required: {}'.format(POST_KEYS)}, status=400)
-    if type(data['media']) is not list:
-        return web.json_response({'msg': 'Invalid media format.'}, status=400)
+    if type(data['media_count']) is not int:
+        return web.json_response({'msg': 'Invalid media count.'}, status=400)
     if not data['message']:  # forced identification of user posts
         return web.json_response({'msg': 'Message is empty.'}, status=400)
     profile = json.loads(rs_0.get('profile:' + address))
@@ -153,11 +154,14 @@ async def api_new_post(req):
         'username': profile['username'],
         'address': address,
         'message': data['message'],
-        'media': data['media'],
-        'media_path': secrets.token_hex(32),
+        'secret': secrets.token_hex(16),
+        'media_count': data['media_count'],
         'ts': ts,
     }
-    mongo_set('posts', user_post)
+    rs_0.set('secret:' + user_post['secret'], address, ex=ONE_HOUR)
+    mongo_set('posts', user_post) # TODO cache it
+    if data['media_count'] > 0:
+        return web.json_response({'secret': user_post['secret']})
     return web.json_response({})
 
 
@@ -173,10 +177,11 @@ async def api_delete_post(req):
         return web.json_response({'msg': 'Post not found.'}, status=404)
     if not post_id.startswith(address):
         return web.json_response({'msg': 'Only owner.'}, status=403)
-    # TODO delete media
+
+    post = mongo_get('posts', post_id)
+    shutil.rmtree('/opt/fantica/media/{}/{}'.format(address, post['secret']), ignore_errors=True)
     mongo_del('posts', post_id)
     return web.json_response({})
-
 
 
 async def api_upload_file(req):
@@ -187,9 +192,8 @@ async def api_upload_file(req):
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
     file_type = req.match_info['file_type']
-    if file_type not in ['cover', 'avatar']: # TODO add a media ?
-        return web.json_response({'msg': 'Invalid type of file.'}, status=400)
-
+    if file_type not in ['cover', 'avatar']:
+        return web.json_response({'msg': 'Invalid file type.'}, status=400)
 
     reader = await req.multipart()
     field = await reader.next()
@@ -198,10 +202,50 @@ async def api_upload_file(req):
     if extension not in ['jpg', 'png', 'jpeg', 'bmp']:
         return web.json_response({'msg': 'Invalid file format.'}, status=400)
 
-    file_name = secrets.token_hex(32) + '.jpg' if file_type == 'media' else file_type + '.jpg'
     directory = '/opt/fantica/{}/{}'.format(file_type, address)
     pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
-    filepath = os.path.join(directory, file_name)
+    filepath = os.path.join(directory, '{}.jpg'.format(file_type))
+
+    with open(filepath, 'wb') as f:
+        size = 0
+        while True:
+            chunk = await field.read_chunk()
+            if not chunk:
+                break
+            size += len(chunk)
+            f.write(chunk)
+
+    return web.json_response({})
+
+
+async def api_upload_media(req):
+    token = req.cookies.get('token')
+    if not token or len(token) != 64:
+        return web.json_response({'msg': 'Invalid token.'}, status=400)
+    address = rs_0.get('token:' + token)
+    if not address:
+        return web.json_response({'msg': 'Token not found.'}, status=404)
+    secret = req.match_info['secret']
+    if rs_0.get('secret:' + secret) != address:
+        return web.json_response({'msg': 'Unauthorized.'}, status=401)
+
+    index = req.match_info['index']
+
+    try:
+        index = int(index)
+    except ValueError:
+        return web.json_response({'msg': 'Invalid index type.'}, status=400)
+
+    reader = await req.multipart()
+    field = await reader.next()
+    extension = field.filename.split('.')[-1]
+
+    if extension not in ['jpg', 'png', 'jpeg', 'bmp']:
+        return web.json_response({'msg': 'Invalid file format.'}, status=400)
+
+    directory = '/opt/fantica/media/{}/{}'.format(address, secret)
+    pathlib.Path(directory).mkdir(parents=True, exist_ok=True)
+    filepath = os.path.join(directory, '{}.jpg'.format(index))
 
     with open(filepath, 'wb') as f:
         size = 0
@@ -270,6 +314,7 @@ app = web.Application(middlewares=[md_cors_factory])
 app.router.add_route('POST', '/api/auth', api_auth)
 app.router.add_route('POST', '/api/update_profile', api_update_profile)
 app.router.add_route('POST', '/api/new_post', api_new_post)
+app.router.add_route('POST', '/api/upload/media/{secret}/{index}', api_upload_media)
 app.router.add_route('POST', '/api/upload/{file_type}', api_upload_file)
 app.router.add_route('POST', '/api/profile', api_get_or_create_profile)
 app.router.add_route('POST', '/api/posts/delete', api_delete_post)
