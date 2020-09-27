@@ -15,6 +15,7 @@ function initialState() {
     token: null,
     metamaskAddress: '',
     gasPrice: '',
+    daiAllowance: 0.1,
     ethNetwork: '',
     fanticaDAppABI: [
       {
@@ -634,6 +635,9 @@ export default new Vuex.Store({
     },
     setToken(state, payload) {
       state.token = payload
+    },
+    setDaiAllowance(state, payload) {
+      state.daiAllowance = payload
     },
     setProfile(state, payload) {
       state.profile = payload
