@@ -1,12 +1,42 @@
 <template>
   <div class="home">
-    <p v-if="profile.displayname !== null">{{metamaskAddress}}</p>
-    <div v-if="profile.displayname !== null">
-        <img src="../assets/cover.png" width="400" alt="cover" @click="uploadCoverImage()" />
-        <br>
-        <img src="../assets/test_pic.jpg" width="100" alt="profile photo" @click="uploadProfilePhoto()" />
+    <p><a :href="etherscanAddress" target="_blank">{{metamaskAddress}}</a></p>
+    <div v-if="profile.username !== null">
         <v-row justify="center">
         <v-col cols="12" sm="6" md="3">
+          <img :src="coverURL" width="400" alt="cover"/>
+          <v-row>
+            <v-col cols="10">
+              <v-file-input
+                v-model="cover"
+                accept="image/png, image/jpeg, image/bmp"
+                placeholder="Pick a cover"
+                prepend-icon="mdi-camera"
+                label="Cover"
+              ></v-file-input>
+            </v-col>
+            <v-col cols=2 class="mt-3">
+              <v-btn :disabled="!cover" :loading="coverUploading" rounded color="primary" @click="uploadCover()">Upload</v-btn>
+            </v-col>
+          </v-row>
+
+          <br>
+          <img :src="avatarURL" width="100" alt="avatar" @click="uploadAvatar()" />
+          <v-row>
+            <v-col cols="10">
+              <v-file-input
+                v-model="avatar"
+                accept="image/png, image/jpeg, image/bmp"
+                placeholder="Pick an avatar"
+                prepend-icon="mdi-camera"
+                label="Avatar"
+              ></v-file-input>
+            </v-col>
+            <v-col cols=2 class="mt-3">
+              <v-btn :disabled="!avatar" :loading="avatarUploading" rounded color="primary" @click="uploadAvatar()">Upload</v-btn>
+            </v-col>
+          </v-row>
+
             <v-switch @click="setSubscriptionAccess()" :loading="switchIsLoading" v-model="subscriptionAccessPaid" :label="`Subscription Access: ${subscriptionAccessPaid == 1 ? 'Paid' : 'Free' }`"></v-switch>
             <div v-if="subscriptionAccessPaid">
                 <v-row>
@@ -20,7 +50,7 @@
                 <v-btn :loading="setIsLoading" outlined rounded small color="indigo" @click="setSubscriptionPrice()">Set</v-btn>
             </div>
 
-            <v-text-field v-model="profile.displayname" label="Display name"></v-text-field>
+            <v-text-field v-model="profile.username" label="Display name"></v-text-field>
             <v-text-field v-model="profile.about" label="About"></v-text-field>
             <v-text-field v-model="profile.location" label="Location"></v-text-field>
             <v-text-field v-model="profile.website" label="Website"></v-text-field>
@@ -37,6 +67,12 @@ export default {
   components: {},
   data() {
     return {
+        cover: null,
+        coverURL: null,
+        avatar: null,
+        avatarURL: null,
+        coverUploading: false,
+        avatarUploading: false,
         subscriptionAccessPaid: true,
         saveChangesIsLoading: false,
         switchIsLoading: false,
@@ -44,6 +80,22 @@ export default {
         monthlyPrice: 0,
         annualPrice: 0,
     };
+  },
+  watch: {
+    cover(newVal) {
+      if (newVal) {
+        this.coverURL = URL.createObjectURL(newVal)
+      } else {
+        this.coverURL = this.$HOST + '/static/cover/' + this.metamaskAddress + '/cover.jpg'
+      }
+    },
+    avatar(newVal) {
+      if (newVal) {
+        this.avatarURL = URL.createObjectURL(newVal)
+      } else {
+        this.avatarURL = this.$HOST + '/static/avatar/' + this.metamaskAddress + '/avatar.jpg'
+      }
+    },
   },
   computed: {
     metamaskAddress() {
@@ -60,6 +112,9 @@ export default {
     },
     gasPrice() {
       return this.$store.state.gasPrice;
+    },
+    etherscanAddress() {
+      return "https://kovan.etherscan.io/address/" + this.metamaskAddress; // TODO change to mainnet
     },
   },
   methods: {
@@ -121,23 +176,46 @@ export default {
         this.subscriptionPrice();
       }
     },
-    uploadCoverImage() {},
-    uploadProfilePhoto() {},
-    // async send() {
-    //   let contract = new window.web3.eth.Contract(
-    //     this.contractABI,
-    //     this.tokenAddress,
-    //     { from: this.metamaskAddress }
-    //   );
-    //   let v = await contract.methods
-    //     .transfer(this.recipient, window.web3.utils.toWei(this.recipientAmount))
-    //     .send({ gasPrice: this.gasPrice.toString() });
-    //   console.log(v);
-    // }
+    uploadCover() {
+      this.coverUploading = true;
+      try {
+        if (this.cover) {
+          var formData = new FormData();
+          formData.append("image", this.cover);
+          this.$http.post(this.$HOST + '/api/upload/cover', formData, {
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+          });
+        }
+      } finally {
+        this.coverUploading = false;
+      }
+    },
+    uploadAvatar() {
+      this.avatarUploading = true;
+      try {
+        if (this.avatar) {
+          var formData = new FormData();
+          formData.append("image", this.avatar);
+          this.$http.post(this.$HOST + '/api/upload/avatar', formData, {
+              withCredentials: true,
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+          });
+        }
+      } finally {
+        this.avatarUploading = false;
+      }
+    },
   },
   mounted() {
     this.subscriptionPrice();
     this.subscriptionAccessIsFree();
+    this.coverURL = this.$HOST + '/static/cover/' + this.metamaskAddress + '/cover.jpg'
+    this.avatarURL = this.$HOST + '/static/avatar/' + this.metamaskAddress + '/avatar.jpg'
   }
 };
 </script>
