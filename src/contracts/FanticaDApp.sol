@@ -116,10 +116,17 @@ contract FanticaDApp is Ownable {
 	// Getter & Setter
 	// ===========================================================
 
-    function canView(address consumer, address creator) external view returns (bool) {
+    function canView(address consumer, address creator) public view returns (bool) {
         if (consumer == creator) return true;
         if (IERC20(DAI).allowance(consumer, address(this)) >= DEFAULT_CONTENT_PRICE) {
             return block.timestamp <= _subscriptionExpires[consumer][creator] || _subscriptionAccessIsFree[creator] ? true : false;
+        }
+        return false;
+    }
+
+    function canViewContent(address consumer, address creator, uint256 contentId) external view returns (bool) {
+        if (canView(consumer, creator) || contentPurchased(consumer, creator, contentId)) {
+            return true;
         }
         return false;
     }
@@ -153,7 +160,7 @@ contract FanticaDApp is Ownable {
         return _subscriptionAccessIsFree[creator] ? 0 : _contentPrice[creator] > 0 ? _contentPrice[creator] : DEFAULT_CONTENT_PRICE;
     }
 
-    function contentPurchased(address consumer, address creator, uint256 contentId) external view returns (bool) {
+    function contentPurchased(address consumer, address creator, uint256 contentId) public view returns (bool) {
         return _purchases[consumer][creator][contentId];
     }
 
