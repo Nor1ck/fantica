@@ -4,7 +4,7 @@
     <v-col cols="12" sm="12" md="6">
 
       <v-card class="mx-auto">
-        <v-img src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg" height="200px"></v-img>
+        <v-img v-for="index in post.media_count" :key="index-1" :src="getMediaPath(index-1)" height="200px"></v-img>
 
         <v-card-title>
           <v-list-item class="grow">
@@ -24,7 +24,7 @@
         <v-card-subtitle class="card-text ta-l">{{post.message}}</v-card-subtitle>
 
         <v-card-actions v-if="post.address != metamaskAddress">
-          <v-btn color="primary" text @click="purchase()">Buy for ${{ contentPrice }}</v-btn>
+          <v-btn v-if="post.media_count > 0" color="primary" text @click="purchase()">Buy for ${{ contentPrice }}</v-btn>
           <v-btn color="primary" text @click="showSubscribe = true">Subscribe</v-btn>
           <v-btn color="primary" text @click="showTips = true">Send Tips</v-btn>
         </v-card-actions>
@@ -66,6 +66,7 @@ export default {
       showTips: false,
       avatarURL: null,
       contentPrice: '',
+      media: [],
     }
   },
   computed: {
@@ -89,6 +90,11 @@ export default {
     },
   },
   methods: {
+    getMediaPath(index) {
+      if (this.post.secret) {
+        return this.$HOST + '/static/media/' + this.post.address + '/' + this.post.secret + '/' + index + '.jpg'
+      }
+    },
     async getContentPrice() {
       let contract = new window.web3.eth.Contract(
         this.fanticaDAppABI,
