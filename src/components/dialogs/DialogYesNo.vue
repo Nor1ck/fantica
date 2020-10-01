@@ -3,7 +3,7 @@
     <v-dialog v-model="show" persistent max-width="290">
       <v-card>
         <v-card-title class="headline">Delete this post?</v-card-title>
-        <v-divider></v-divider>
+
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text @click="callback(false)">Cancel</v-btn>
