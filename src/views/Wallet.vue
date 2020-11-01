@@ -8,7 +8,7 @@
     <p class="mt-5" v-if="isOwner">Availabe DAI Fees: {{ feesBalance }}</p>
     <v-btn v-if="feesBalance > 0" rounded color="yellow accent-1" @click="withdrawDAIFees()">Withdraw DAI Fees</v-btn>
 
-    <p class="mt-5">TODO: Show Transactions</p>
+    <h1 class="mt-5">TODO: Show Transactions</h1>
     <!-- <v-btn rounded color="yellow darken-1" @click="buyFNT()">Buy DAI</v-btn> -->
   </div>
 </template>
