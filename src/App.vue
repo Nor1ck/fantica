@@ -28,19 +28,22 @@ export default {
   },
   watch: {
     metamaskAddress(newValue) {
-      console.log('metamask ' + newValue);
-      if (this.$cookie.get('address') && newValue != this.$cookie.get('address')) {
-        this.logOut()
+      console.log("metamask " + newValue);
+      if (
+        this.$cookie.get("address") &&
+        newValue != this.$cookie.get("address")
+      ) {
+        this.logOut();
       }
-      this.daiAllowanceForDApp()
-    }
+      this.daiAllowanceForDApp();
+    },
   },
   computed: {
     metamaskAddress() {
-      return this.$store.state.metamaskAddress
+      return this.$store.state.metamaskAddress;
     },
     fanticaDAppAddress() {
-      return this.$store.state.fanticaDAppAddress
+      return this.$store.state.fanticaDAppAddress;
     },
     profile() {
       return this.$store.state.profile;
@@ -55,28 +58,39 @@ export default {
   methods: {
     async auth() {
       if (this.metamaskAddress) {
-        let message = 'Address: ' + this.metamaskAddress;
-        let signature = await window.web3.eth.personal.sign(message, this.metamaskAddress);
+        let message = "Address: " + this.metamaskAddress;
+        let signature = await window.web3.eth.personal.sign(
+          message,
+          this.metamaskAddress
+        );
         if (signature) {
-          let resp = await this.$http.post(this.$HOST + '/api/auth', JSON.stringify({msg: message, sign: signature}), { withCredentials: true });
+          let resp = await this.$http.post(
+            this.$HOST + "/api/auth",
+            JSON.stringify({ msg: message, sign: signature }),
+            { withCredentials: true }
+          );
           if (resp.status == 200) {
-            this.$cookie.set('token', resp.data.token, resp.data.expires);
-            this.$cookie.set('address', this.metamaskAddress, resp.data.expires);
+            this.$cookie.set("token", resp.data.token, resp.data.expires);
+            this.$cookie.set(
+              "address",
+              this.metamaskAddress,
+              resp.data.expires
+            );
             await this.getProfile();
-            this.$router.push('/profile')
+            this.$router.push("/profile");
           }
         }
       }
     },
     logOut() {
-      this.$cookie.delete('token');
-        this.$cookie.delete('address');
-        this.$store.commit('setToken', null);
-        this.$store.commit('resetProfile');
-        this.$router.push('/')
+      this.$cookie.delete("token");
+      this.$cookie.delete("address");
+      this.$store.commit("setToken", null);
+      this.$store.commit("resetProfile");
+      this.$router.push("/");
     },
     goNewPost() {
-      this.$router.push('/newpost');
+      this.$router.push("/newpost");
     },
     connectToMetamask() {
       if (window.ethereum) {
@@ -91,7 +105,10 @@ export default {
         }
         var _this = this;
         window.ethereum.on("accountsChanged", async (accounts) => {
-          _this.$store.commit("setMetamaskAddress", window.web3.utils.toChecksumAddress(accounts[0]));
+          _this.$store.commit(
+            "setMetamaskAddress",
+            window.web3.utils.toChecksumAddress(accounts[0])
+          );
         });
         window.ethereum.on("chainChanged", async (networkId) => {
           _this.$store.commit("setEthNetwork", networkId);
@@ -103,7 +120,12 @@ export default {
     },
     async getGasPrice() {
       window.web3.eth.getGasPrice((err, gasPrice) => {
-        err ? console.log(err) : this.$store.commit('setGasPrice', window.web3.utils.fromWei(gasPrice, "gwei"))
+        err
+          ? console.log(err)
+          : this.$store.commit(
+              "setGasPrice",
+              window.web3.utils.fromWei(gasPrice, "gwei")
+            );
       });
     },
     async getMetamaskBalance() {
@@ -113,24 +135,27 @@ export default {
     },
     async getProfile() {
       if (this.$cookie.get("token")) {
-        let resp = await this.$http.post(this.$HOST + '/api/profile', {}, { withCredentials: true });
+        let resp = await this.$http.post(
+          this.$HOST + "/api/profile",
+          {},
+          { withCredentials: true }
+        );
         if (resp.status == 200) {
-          this.$store.commit('setProfile', resp.data.profile);
+          this.$store.commit("setProfile", resp.data.profile);
         }
       }
     },
     readCookie() {
       if (this.$cookie.get("token")) {
-        this.$store.commit('setToken', this.$cookie.get("token"))
+        this.$store.commit("setToken", this.$cookie.get("token"));
       }
     },
     async daiAllowanceForDApp() {
-      let contract = new window.web3.eth.Contract(
-        this.daiABI,
-        this.DAIAddress
-      );
-      let daiAllowance = await contract.methods.allowance(this.metamaskAddress, this.fanticaDAppAddress).call();
-      this.$store.commit('setDaiAllowance', daiAllowance);
+      let contract = new window.web3.eth.Contract(this.daiABI, this.DAIAddress);
+      let daiAllowance = await contract.methods
+        .allowance(this.metamaskAddress, this.fanticaDAppAddress)
+        .call();
+      this.$store.commit("setDaiAllowance", daiAllowance);
     },
   },
   mounted() {
@@ -139,8 +164,8 @@ export default {
     this.getGasPrice();
   },
   destroyed() {
-    console.log('destroyed');
-  }
+    console.log("destroyed");
+  },
 };
 </script>
 
