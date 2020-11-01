@@ -4,7 +4,9 @@
     <v-col cols="12" sm="12" md="6">
 
       <v-card class="mx-auto">
-        <v-img v-for="index in post.media_count" :key="index-1" :src="getMediaPath(index-1)" height="200px"></v-img>
+        <span v-if="post.secret">
+          <v-img v-for="index in post.media_count" :key="index-1" :src="getMediaPath(index-1)" height="200px"></v-img>
+        </span>
 
         <v-card-title>
           <v-list-item class="grow">
@@ -24,9 +26,8 @@
         <v-card-subtitle class="card-text ta-l">{{post.message}}</v-card-subtitle>
 
         <v-card-actions v-if="post.address != metamaskAddress">
-          <v-btn v-if="post.media_count > 0" color="primary" text @click="purchase()">Buy for ${{ contentPrice }}</v-btn>
-          <v-btn color="primary" text @click="showSubscribe = true">Subscribe</v-btn>
-          <v-btn color="primary" text @click="showTips = true">Send Tips</v-btn>
+          <v-btn v-if="post.media_count > 0" color="primary" text @click="purchase()">Buy for ${{ contentPrice }} (media: {{post.media_count}})</v-btn>
+          <v-btn color="primary" text @click="showTips = true" v-if="subscriptionAccessIsFree && post.address != metamaskAddress">Send Tips</v-btn>
         </v-card-actions>
         <v-card-actions v-else>
           <v-spacer></v-spacer>
@@ -38,7 +39,6 @@
   </v-row>
 
   <DialogYesNo :show="showDelete" :callback="deletePost"/>
-  <SelectPeriod :address="post.address" :show="showSubscribe" :callback="subscribe"/>
   <DialogInput :show="showTips" :callback="sendTips"/>
 </div>
 
@@ -46,13 +46,11 @@
 
 <script>
 import DialogYesNo from "@/components/dialogs/DialogYesNo.vue";
-import SelectPeriod from "@/components/dialogs/SelectPeriod.vue";
 import DialogInput from "@/components/dialogs/DialogInput.vue";
 
 export default {
   components: {
     DialogYesNo,
-    SelectPeriod,
     DialogInput,
   },
   props: {
@@ -61,8 +59,8 @@ export default {
   },
   data() {
     return {
+      subscriptionAccessIsFree: true,
       showDelete: false,
-      showSubscribe: false,
       showTips: false,
       avatarURL: null,
       contentPrice: '',
@@ -103,16 +101,14 @@ export default {
       let contentPrice = await contract.methods.contentPrice(this.post.address).call();
       this.contentPrice = Number(window.web3.utils.fromWei(contentPrice, 'ether')).toFixed(2)
     },
-    async subscribe(result, period) {
-      this.showSubscribe = false;
-      if (!result) return
-      let creator = this.post._id.split(":")[0];
-      let contract = new window.web3.eth.Contract(
-        this.fanticaDAppABI,
-        this.fanticaDAppAddress,
-        { from: this.metamaskAddress }
-      );
-      await contract.methods.subscribe(creator, period).send();
+    async getSubscriptionAccessIsFree() {
+      if (this.post.address != this.metamaskAddress) {
+        let contract = new window.web3.eth.Contract(
+          this.fanticaDAppABI,
+          this.fanticaDAppAddress
+        );
+        this.subscriptionAccessIsFree = await contract.methods.subscriptionAccessIsFree(this.post.address).call();
+      }
     },
     async purchase() {
       let creator = this.post._id.split(":")[0];
@@ -134,16 +130,7 @@ export default {
         this.fanticaDAppAddress,
         { from: this.metamaskAddress }
       );
-      await contract.methods.sendTips(creator, contentId, window.web3.utils.toWei(amount, 'ether')).send();
-    },
-    async approveDAIForDApp() {
-      let contract = new window.web3.eth.Contract(
-        this.daiABI,
-        this.DAIAddress,
-        { from: this.metamaskAddress }
-      );
-      let maxUINT = '0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF'; // max uint 2 ** 256
-      await contract.methods.approve(this.fanticaDAppAddress, maxUINT).send();
+      await contract.methods.sendTips(creator, contentId, window.web3.utils.toWei(amount.toString(), 'ether')).send();
     },
     async deletePost(result) {
       this.showDelete = false;
@@ -156,6 +143,7 @@ export default {
     }
   },
   mounted() {
+    this.getSubscriptionAccessIsFree()
     this.getContentPrice()
     this.avatarURL = this.$HOST + '/static/avatar/' + this.post.address + '/avatar.jpg'
   }
