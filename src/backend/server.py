@@ -6,6 +6,7 @@ import os
 import pathlib
 import redis
 import secrets
+import sha3
 import shutil
 
 from aiohttp import web
@@ -17,10 +18,13 @@ ONE_MINUTE = 60
 ONE_HOUR = ONE_MINUTE * 60
 ONE_DAY = ONE_HOUR * 24
 TESTNET = 'https://kovan.infura.io/v3/7e078b78f3ba433c8c5c8715a612487b'
+INFURA = TESTNET
+FANTICA_DAPP_ADDRESS = '0xd86e8c227118f4b7f8578bd54c23e0afd4502918'
 web3 = Web3(Web3.HTTPProvider(TESTNET))
 rs_0 = redis.StrictRedis(decode_responses=True, db=5)  # TODO set to 0
 client = MongoClient()
-db = client['fantica']
+db = client['fantica:{}'.format(FANTICA_DAPP_ADDRESS)]
+free_workers = asyncio.Semaphore(20)
 
 
 ALLOWED_HEADERS = ','.join((
@@ -54,6 +58,37 @@ async def md_cors_factory(request, handler):
         return set_cors_headers(request, response)
 
 
+def keccak(seed):
+    k = sha3.keccak_256()
+    k.update(bytes(str(seed), encoding='utf-8'))
+    return k.hexdigest()
+
+
+def encode_func(func_name, hex_prefix=False) -> str:
+    function_hex = keccak(func_name)[:8]  # first 4 bytes
+    if hex_prefix:
+        function_hex = '0x{}'.format(function_hex)
+    return function_hex
+
+
+def encode_data(func, params, value_wei=0):
+    assert isinstance(value_wei, int)
+    if params:
+        assert len(func.split(',')) == len(params)
+    hex_params = [str(hex(int(str(p), 16))[2:]).zfill(64)
+                  for p in params]  # without 0x, int64
+    value_wei_hex = str(hex(value_wei)[2:]).zfill(64)  # without 0x, int64
+    return '0x{}{}{}'.format(encode_func(func), ''.join(hex_params), value_wei_hex)
+
+
+def build_query(func, params, _id=1):
+    tx_data = {
+        'to': FANTICA_DAPP_ADDRESS,
+        'data': encode_data(func, params),
+    }
+    return {"jsonrpc": "2.0", "method": "eth_call", "id": _id, "params": [tx_data] }
+
+
 def verify_message(message, signature):
     from eth_account.messages import encode_defunct
     signer = web3.eth.account.recover_message(
@@ -67,6 +102,7 @@ def mongo_get(collection, key):
 
 def mongo_set(collection, obj):
     return db[collection].update_one({'_id': obj['_id']}, {'$set': obj}, upsert=True)
+
 
 def mongo_del(collection, obj_id):
     return db[collection].delete_one({'_id': obj_id})
@@ -102,7 +138,7 @@ async def api_auth(req):
     try:
         signer = verify_message(data['msg'], data['sign'])
     except:
-        return web.json_response({'msg': 'Signature error.'}, status=400)
+        return web.json_response({'msg': 'Signature error.'}, status=401)
     if 'Address: ' + signer != data['msg']:
         return web.json_response({'msg': 'Invalid signature.'}, status=403)
     secret_token = secrets.token_hex(32)
@@ -115,7 +151,7 @@ async def api_update_profile(req):
     token = req.cookies.get('token')
     data = await req.json()
     if not token or len(token) != 64:
-        return web.json_response({'msg': 'Invalid token.'}, status=400)
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
     address = rs_0.get('token:' + token)
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
@@ -137,7 +173,7 @@ async def api_new_post(req):
     token = req.cookies.get('token')
     data = await req.json()
     if not token or len(token) != 64:
-        return web.json_response({'msg': 'Invalid token.'}, status=400)
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
     address = rs_0.get('token:' + token)
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
@@ -158,7 +194,7 @@ async def api_new_post(req):
         'media_count': data['media_count'],
         'ts': ts,
     }
-    rs_0.set('secret:' + user_post['secret'], address, ex=ONE_HOUR)
+    rs_0.set('secret:' + user_post['secret'], address, ex=ONE_MINUTE * 5)
     mongo_set('posts', user_post) # TODO cache it
     if data['media_count'] > 0:
         return web.json_response({'secret': user_post['secret']})
@@ -168,7 +204,7 @@ async def api_new_post(req):
 async def api_delete_post(req):
     token = req.cookies.get('token')
     if not token or len(token) != 64:
-        return web.json_response({'msg': 'Invalid token.'}, status=400)
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
     address = rs_0.get('token:' + token)
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
@@ -187,7 +223,7 @@ async def api_delete_post(req):
 async def api_upload_file(req):
     token = req.cookies.get('token')
     if not token or len(token) != 64:
-        return web.json_response({'msg': 'Invalid token.'}, status=400)
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
     address = rs_0.get('token:' + token)
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
@@ -221,7 +257,7 @@ async def api_upload_file(req):
 async def api_upload_media(req):
     token = req.cookies.get('token')
     if not token or len(token) != 64:
-        return web.json_response({'msg': 'Invalid token.'}, status=400)
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
     address = rs_0.get('token:' + token)
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
@@ -262,14 +298,14 @@ async def api_upload_media(req):
 async def api_get_or_create_profile(req):
     token = req.cookies.get('token')
     if not token or len(token) != 64:
-        return web.json_response({'msg': 'Invalid token.'}, status=400)
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
     address = rs_0.get('token:' + token)
     if not address:
         return web.json_response({'msg': 'Token not found.'}, status=404)
     profile = mongo_get('profile', address)
     if not profile:
         profile = create_profile(address)
-        rs_0.set('profile:' + address, json.dumps(profile), ex=ONE_DAY * 7)
+    rs_0.set('profile:' + address, json.dumps(profile), ex=ONE_DAY * 7)
     return web.json_response({'profile': profile})
 
 
@@ -287,14 +323,42 @@ async def api_user_profile(req):
 
 
 async def api_user_posts(req):
-    address = req.match_info['address']
+    token = req.cookies.get('token')
+    if not token or len(token) != 64:
+        return web.json_response({'msg': 'Invalid token.'}, status=401)
+    address = rs_0.get('token:' + token)
+    if not address:
+        return web.json_response({'msg': 'Token not found.'}, status=404)
+
+    creator = req.match_info['address']
     try:
         skip = int(req.rel_url.query.get('skip', 0))
     except:
         return web.json_response({'msg': 'Invalid skip parameter type.'}, status=400)
-    posts = [x for x in mongo_find_posts('posts', skip=skip, filter={'address': address})]
+    posts = [x for x in mongo_find_posts(
+        'posts', skip=skip, filter={'address': creator})]
     if not posts:
         return web.json_response({'msg': 'Posts not found.'}, status=404)
+
+    can_view = rs_0.exists('subscribtion:{}:{}'.format(address, creator)) == 1 or creator == address
+    if not can_view:
+        can_view = await dapp_can_view(address, creator) # TODO track the events instead of calls
+
+    if not can_view:
+        query = []
+        for i, p in enumerate(posts):
+            content_id_hex = format(int(p['_id'].split(':')[-1]), 'x')
+            query.append(build_query('contentPurchased(address,address,uint256)', [address, creator, content_id_hex], _id=i))
+        resp = await rpc_call(query)
+        for r in resp:
+            content_purchaised = int(r['result'], 16) == 1
+            if not content_purchaised:
+                posts[r['id']].pop('secret')
+    else:
+        expires = await dapp_subscription_expires(address, creator)
+        expires = expires - arrow.utcnow().timestamp
+        if expires > 0:
+            rs_0.set('subscribtion:{}:{}'.format(address, creator), '', ex=expires)
     return web.json_response({'posts': posts})
 
 
@@ -304,9 +368,43 @@ async def api_recent_posts(req):
     except:
         return web.json_response({'msg': 'Invalid skip parameter type.'}, status=400)
     posts = [x for x in mongo_find_posts('posts', skip=skip)]
+    [p.pop('secret') for p in posts]
     if not posts:
         return web.json_response({'msg': 'Posts not found.'}, status=404)
     return web.json_response({'posts': posts})
+
+
+async def rpc_call(query):
+    async with free_workers:
+        async with aiohttp.ClientSession() as sess:
+            async with sess.request('POST', INFURA, json=query, timeout=5, ssl=False) as resp:
+                try:
+                    return json.loads(await resp.text())
+                except Exception as e:
+                    print(e)
+                    print('rpc_call {} {}'.format(resp.status, await resp.text()))
+
+
+async def dapp_subscription_expires(consumer, creator):
+    query = build_query('subscriptionExpires(address,address)', [consumer, creator])
+    resp = await rpc_call(query)
+    return int(resp['result'], 16)
+
+
+async def dapp_can_view(consumer, creator):
+    query = build_query('canView(address,address)', [consumer, creator])
+    resp = await rpc_call(query)
+    return int(resp['result'], 16) == 1
+
+
+async def dapp_contentPurchased(consumer, creator, content_id):
+    query = build_query('contentPurchased(address,address,uint256)', [consumer, creator, format(int(content_id), 'x')])
+    resp = await rpc_call(query)
+    return int(resp['result'], 16) == 1
+
+
+async def event_scan():
+    pass
 
 
 app = web.Application(middlewares=[md_cors_factory])
@@ -325,7 +423,6 @@ app.router.add_route('GET', '/api/posts/{address}', api_user_posts)
 
 app.add_routes([web.static('/static', '/opt/fantica')])
 
-# TODO save purchased posts
 
 if __name__ == '__main__':
     web.run_app(app, host='localhost', port=3005)
