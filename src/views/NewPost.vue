@@ -15,20 +15,25 @@
           accept="image/png, image/jpeg, image/bmp"
           placeholder="Add a media"
           prepend-icon="mdi-camera"
-          label="Media">
+          label="Media"
+        >
           <template v-slot:selection="{ text }">
-            <v-chip
-              small
-              label
-              color="primary"
-            >
+            <v-chip small label color="primary">
               {{ text }}
             </v-chip>
           </template>
-        ></v-file-input>
+          ></v-file-input
+        >
       </v-col>
     </v-row>
-    <v-btn :loading="loading" @click="createPost()" outlined rounded color="primary">post</v-btn>
+    <v-btn
+      :loading="loading"
+      @click="createPost()"
+      outlined
+      rounded
+      color="primary"
+      >post</v-btn
+    >
   </div>
 </template>
 
@@ -39,8 +44,8 @@ export default {
     return {
       loading: false,
       post: {
-        'message': null,
-        'media_count': 0,
+        message: null,
+        media_count: 0,
       },
       media: [],
     };
@@ -51,11 +56,15 @@ export default {
         this.loading = true;
         try {
           this.post.media_count = this.media.length;
-          let resp = await this.$http.post(this.$HOST + '/api/new_post', JSON.stringify(this.post), { withCredentials: true });
+          let resp = await this.$http.post(
+            this.$HOST + "/api/new_post",
+            JSON.stringify(this.post),
+            { withCredentials: true }
+          );
           if (resp.data.secret) {
             for (let index = 0; index < this.media.length; index++) {
               const media = this.media[index];
-              this.uploadMedia(resp.data.secret, index, media)
+              this.uploadMedia(resp.data.secret, index, media);
             }
           }
         } finally {
@@ -68,12 +77,16 @@ export default {
     async uploadMedia(secret, index, media) {
       var formData = new FormData();
       formData.append("image", media);
-      await this.$http.post(this.$HOST + '/api/upload/media/' + secret + '/' + index, formData, {
+      await this.$http.post(
+        this.$HOST + "/api/upload/media/" + secret + "/" + index,
+        formData,
+        {
           withCredentials: true,
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-      });
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
     },
   },
 };
@@ -81,6 +94,6 @@ export default {
 
 <style scoped>
 .pt-0 {
-    padding-top: 0!important;
+  padding-top: 0 !important;
 }
 </style>

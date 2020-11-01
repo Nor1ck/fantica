@@ -1,6 +1,6 @@
 <template>
   <div class="feed">
-    <Post v-for="post in posts" :post="post" :key="post._id" class="mb-5"/>
+    <Post v-for="post in posts" :post="post" :key="post._id" class="mb-5" />
   </div>
 </template>
 
@@ -19,14 +19,16 @@ export default {
   },
   methods: {
     async getPosts() {
-      let resp = await this.$http.get(this.$HOST + '/api/posts/recent', { withCredentials: true });
+      let resp = await this.$http.get(this.$HOST + "/api/posts/recent", {
+        withCredentials: true,
+      });
       if (resp.status == 200) {
-        this.posts = resp.data.posts
+        this.posts = resp.data.posts;
       }
     },
   },
   mounted() {
-    this.getPosts()
-  }
+    this.getPosts();
+  },
 };
 </script>

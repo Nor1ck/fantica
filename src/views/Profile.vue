@@ -1,10 +1,12 @@
 <template>
   <div class="home">
-    <p><a :href="etherscanAddress" target="_blank">{{metamaskAddress}}</a></p>
+    <p>
+      <a :href="etherscanAddress" target="_blank">{{ metamaskAddress }}</a>
+    </p>
     <div v-if="profile.username !== null">
-        <v-row justify="center">
+      <v-row justify="center">
         <v-col cols="12" sm="6" md="3">
-          <img :src="coverURL" width="400" alt="cover"/>
+          <img :src="coverURL" width="400" alt="cover" />
           <v-row>
             <v-col cols="10">
               <v-file-input
@@ -15,13 +17,25 @@
                 label="Cover"
               ></v-file-input>
             </v-col>
-            <v-col cols=2 class="mt-3">
-              <v-btn :disabled="!cover" :loading="coverUploading" rounded color="primary" @click="uploadCover()">Upload</v-btn>
+            <v-col cols="2" class="mt-3">
+              <v-btn
+                :disabled="!cover"
+                :loading="coverUploading"
+                rounded
+                color="primary"
+                @click="uploadCover()"
+                >Upload</v-btn
+              >
             </v-col>
           </v-row>
 
-          <br>
-          <img :src="avatarURL" width="100" alt="avatar" @click="uploadAvatar()" />
+          <br />
+          <img
+            :src="avatarURL"
+            width="100"
+            alt="avatar"
+            @click="uploadAvatar()"
+          />
           <v-row>
             <v-col cols="10">
               <v-file-input
@@ -32,41 +46,102 @@
                 label="Avatar"
               ></v-file-input>
             </v-col>
-            <v-col cols=2 class="mt-3">
-              <v-btn :disabled="!avatar" :loading="avatarUploading" rounded color="primary" @click="uploadAvatar()">Upload</v-btn>
+            <v-col cols="2" class="mt-3">
+              <v-btn
+                :disabled="!avatar"
+                :loading="avatarUploading"
+                rounded
+                color="primary"
+                @click="uploadAvatar()"
+                >Upload</v-btn
+              >
             </v-col>
           </v-row>
 
-            <v-switch @click="setSubscriptionAccess()" :loading="dappLoading" v-model="subscriptionAccessPaid" :label="`Subscription Access: ${subscriptionAccessPaid == 1 ? 'Paid' : 'Free' }`"></v-switch>
-            <div v-if="subscriptionAccessPaid">
-                <v-row>
-                    <v-col cols="5">
-                        <v-text-field v-model="monthlyPrice" prefix="$" type="number" label="Montly Price"></v-text-field>
-                    </v-col>
-                    <v-col cols="5">
-                        <v-text-field v-model="annualPrice" prefix="$" type="number" label="Annual Price"></v-text-field>
-                    </v-col>
-                    <v-col class="mt-5" cols="2">
-                        <v-btn :loading="dappLoading" outlined rounded small color="indigo" @click="setSubscriptionPrice()">Set</v-btn>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="10">
-                        <v-text-field v-model="contentPrice" prefix="$" type="number" label="Content Price"></v-text-field>
-                    </v-col>
-                    <v-col class="mt-5" cols="2">
-                        <v-btn :loading="dappLoading" outlined rounded small color="indigo" @click="setContentPrice()">Set</v-btn>
-                    </v-col>
-                </v-row>
-            </div>
+          <v-switch
+            @click="setSubscriptionAccess()"
+            :loading="dappLoading"
+            v-model="subscriptionAccessPaid"
+            :label="`Subscription Access: ${
+              subscriptionAccessPaid == 1 ? 'Paid' : 'Free'
+            }`"
+          ></v-switch>
+          <div v-if="subscriptionAccessPaid">
+            <v-row>
+              <v-col cols="5">
+                <v-text-field
+                  v-model="monthlyPrice"
+                  prefix="$"
+                  type="number"
+                  label="Montly Price"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="5">
+                <v-text-field
+                  v-model="annualPrice"
+                  prefix="$"
+                  type="number"
+                  label="Annual Price"
+                ></v-text-field>
+              </v-col>
+              <v-col class="mt-5" cols="2">
+                <v-btn
+                  :loading="dappLoading"
+                  outlined
+                  rounded
+                  small
+                  color="indigo"
+                  @click="setSubscriptionPrice()"
+                  >Set</v-btn
+                >
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="10">
+                <v-text-field
+                  v-model="contentPrice"
+                  prefix="$"
+                  type="number"
+                  label="Content Price"
+                ></v-text-field>
+              </v-col>
+              <v-col class="mt-5" cols="2">
+                <v-btn
+                  :loading="dappLoading"
+                  outlined
+                  rounded
+                  small
+                  color="indigo"
+                  @click="setContentPrice()"
+                  >Set</v-btn
+                >
+              </v-col>
+            </v-row>
+          </div>
 
-            <v-text-field v-model="profile.username" label="Display name"></v-text-field>
-            <v-text-field v-model="profile.about" label="About"></v-text-field>
-            <v-text-field v-model="profile.location" label="Location"></v-text-field>
-            <v-text-field v-model="profile.website" label="Website"></v-text-field>
-            <v-btn :loading="saveChangesIsLoading" outlined rounded color="primary" @click="updateProfile()">Save changes</v-btn>
+          <v-text-field
+            v-model="profile.username"
+            label="Display name"
+          ></v-text-field>
+          <v-text-field v-model="profile.about" label="About"></v-text-field>
+          <v-text-field
+            v-model="profile.location"
+            label="Location"
+          ></v-text-field>
+          <v-text-field
+            v-model="profile.website"
+            label="Website"
+          ></v-text-field>
+          <v-btn
+            :loading="saveChangesIsLoading"
+            outlined
+            rounded
+            color="primary"
+            @click="updateProfile()"
+            >Save changes</v-btn
+          >
         </v-col>
-        </v-row>
+      </v-row>
     </div>
   </div>
 </template>
@@ -77,33 +152,35 @@ export default {
   components: {},
   data() {
     return {
-        cover: null,
-        coverURL: null,
-        avatar: null,
-        avatarURL: null,
-        coverUploading: false,
-        avatarUploading: false,
-        subscriptionAccessPaid: true,
-        saveChangesIsLoading: false,
-        dappLoading: false,
-        monthlyPrice: 0,
-        annualPrice: 0,
-        contentPrice: 0,
+      cover: null,
+      coverURL: null,
+      avatar: null,
+      avatarURL: null,
+      coverUploading: false,
+      avatarUploading: false,
+      subscriptionAccessPaid: true,
+      saveChangesIsLoading: false,
+      dappLoading: false,
+      monthlyPrice: 0,
+      annualPrice: 0,
+      contentPrice: 0,
     };
   },
   watch: {
     cover(newVal) {
       if (newVal) {
-        this.coverURL = URL.createObjectURL(newVal)
+        this.coverURL = URL.createObjectURL(newVal);
       } else {
-        this.coverURL = this.$HOST + '/static/cover/' + this.metamaskAddress + '/cover.jpg'
+        this.coverURL =
+          this.$HOST + "/static/cover/" + this.metamaskAddress + "/cover.jpg";
       }
     },
     avatar(newVal) {
       if (newVal) {
-        this.avatarURL = URL.createObjectURL(newVal)
+        this.avatarURL = URL.createObjectURL(newVal);
       } else {
-        this.avatarURL = this.$HOST + '/static/avatar/' + this.metamaskAddress + '/avatar.jpg'
+        this.avatarURL =
+          this.$HOST + "/static/avatar/" + this.metamaskAddress + "/avatar.jpg";
       }
     },
   },
@@ -131,7 +208,11 @@ export default {
     async updateProfile() {
       this.saveChangesIsLoading = true;
       try {
-        await this.$http.post(this.$HOST + '/api/update_profile', JSON.stringify(this.profile), { withCredentials: true });
+        await this.$http.post(
+          this.$HOST + "/api/update_profile",
+          JSON.stringify(this.profile),
+          { withCredentials: true }
+        );
       } finally {
         this.saveChangesIsLoading = false;
       }
@@ -141,25 +222,39 @@ export default {
         this.fanticaDAppABI,
         this.fanticaDAppAddress
       );
-      let monthlyPrice = await contract.methods.subscriptionPrice(this.metamaskAddress, 1).call();
-      let annualPrice = await contract.methods.subscriptionPrice(this.metamaskAddress, 2).call();
-      this.monthlyPrice = Number(window.web3.utils.fromWei(monthlyPrice, 'ether')).toFixed(2)
-      this.annualPrice = Number(window.web3.utils.fromWei(annualPrice, 'ether')).toFixed(2)
+      let monthlyPrice = await contract.methods
+        .subscriptionPrice(this.metamaskAddress, 1)
+        .call();
+      let annualPrice = await contract.methods
+        .subscriptionPrice(this.metamaskAddress, 2)
+        .call();
+      this.monthlyPrice = Number(
+        window.web3.utils.fromWei(monthlyPrice, "ether")
+      ).toFixed(2);
+      this.annualPrice = Number(
+        window.web3.utils.fromWei(annualPrice, "ether")
+      ).toFixed(2);
     },
     async getContentPrice() {
       let contract = new window.web3.eth.Contract(
         this.fanticaDAppABI,
         this.fanticaDAppAddress
       );
-      let contentPrice = await contract.methods.contentPrice(this.metamaskAddress).call();
-      this.contentPrice = Number(window.web3.utils.fromWei(contentPrice, 'ether')).toFixed(2)
+      let contentPrice = await contract.methods
+        .contentPrice(this.metamaskAddress)
+        .call();
+      this.contentPrice = Number(
+        window.web3.utils.fromWei(contentPrice, "ether")
+      ).toFixed(2);
     },
     async subscriptionAccessIsFree() {
       let contract = new window.web3.eth.Contract(
         this.fanticaDAppABI,
         this.fanticaDAppAddress
       );
-      this.subscriptionAccessPaid = !await contract.methods.subscriptionAccessIsFree(this.metamaskAddress).call();
+      this.subscriptionAccessPaid = !(await contract.methods
+        .subscriptionAccessIsFree(this.metamaskAddress)
+        .call());
     },
     async setSubscriptionPrice() {
       this.dappLoading = true;
@@ -169,9 +264,11 @@ export default {
           this.fanticaDAppAddress,
           { from: this.metamaskAddress }
         );
-        let monthlyPrice = window.web3.utils.toWei(this.monthlyPrice, 'ether');
-        let annualPrice = window.web3.utils.toWei(this.annualPrice, 'ether');
-        await contract.methods.setSubscriptionPrice(monthlyPrice, annualPrice).send();
+        let monthlyPrice = window.web3.utils.toWei(this.monthlyPrice, "ether");
+        let annualPrice = window.web3.utils.toWei(this.annualPrice, "ether");
+        await contract.methods
+          .setSubscriptionPrice(monthlyPrice, annualPrice)
+          .send();
       } finally {
         this.dappLoading = false;
       }
@@ -184,7 +281,7 @@ export default {
           this.fanticaDAppAddress,
           { from: this.metamaskAddress }
         );
-        let contentPrice = window.web3.utils.toWei(this.contentPrice, 'ether');
+        let contentPrice = window.web3.utils.toWei(this.contentPrice, "ether");
         await contract.methods.setContentPrice(contentPrice).send();
       } finally {
         this.dappLoading = false;
@@ -198,7 +295,9 @@ export default {
           this.fanticaDAppAddress,
           { from: this.metamaskAddress }
         );
-        await contract.methods.setSubscriptionAccess(!this.subscriptionAccessPaid).send();
+        await contract.methods
+          .setSubscriptionAccess(!this.subscriptionAccessPaid)
+          .send();
       } catch {
         this.subscriptionAccessPaid = !this.subscriptionAccessPaid;
       } finally {
@@ -214,11 +313,11 @@ export default {
         if (this.cover) {
           var formData = new FormData();
           formData.append("image", this.cover);
-          await this.$http.post(this.$HOST + '/api/upload/cover', formData, {
-              withCredentials: true,
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              }
+          await this.$http.post(this.$HOST + "/api/upload/cover", formData, {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           });
         }
       } finally {
@@ -231,11 +330,11 @@ export default {
         if (this.avatar) {
           var formData = new FormData();
           formData.append("image", this.avatar);
-          this.$http.post(this.$HOST + '/api/upload/avatar', formData, {
-              withCredentials: true,
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              }
+          this.$http.post(this.$HOST + "/api/upload/avatar", formData, {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           });
         }
       } finally {
@@ -247,8 +346,10 @@ export default {
     this.subscriptionPrice();
     this.getContentPrice();
     this.subscriptionAccessIsFree();
-    this.coverURL = this.$HOST + '/static/cover/' + this.metamaskAddress + '/cover.jpg'
-    this.avatarURL = this.$HOST + '/static/avatar/' + this.metamaskAddress + '/avatar.jpg'
-  }
+    this.coverURL =
+      this.$HOST + "/static/cover/" + this.metamaskAddress + "/cover.jpg";
+    this.avatarURL =
+      this.$HOST + "/static/avatar/" + this.metamaskAddress + "/avatar.jpg";
+  },
 };
 </script>

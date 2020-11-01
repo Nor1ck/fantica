@@ -7,21 +7,15 @@
 </template>
 
 <script>
-
 export default {
   name: "Home",
-  components: {
-  },
+  components: {},
   data() {
     return {};
   },
   methods: {
-    buyFNT() {
-
-    },
-    buyDAI() {
-
-    },
+    buyFNT() {},
+    buyDAI() {},
   },
 };
 </script>
