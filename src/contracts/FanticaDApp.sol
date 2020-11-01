@@ -124,11 +124,27 @@ contract FanticaDApp is Ownable {
         return false;
     }
 
+    function subscriptionExpires(address consumer, address creator) public view returns (uint256) {
+        return _subscriptionExpires[consumer][creator];
+    }
+
     function canViewContent(address consumer, address creator, uint256 contentId) external view returns (bool) {
         if (canView(consumer, creator) || contentPurchased(consumer, creator, contentId)) {
             return true;
         }
         return false;
+    }
+
+    function confirmationIsRequired(address consumer, address creator) public view returns (bool) {
+        require(_subscriptionExpires[consumer][creator] != 0, "Subscription not found.");
+        require(_subscriptionExpires[consumer][creator] <= block.timestamp, "Subscription hasn't expired yet.");
+        require(!_subscriptionAccessIsFree[creator], "No renewal is required for a free subscription.");
+
+        SubscriptionPeriod currenPeriod = _subscriptionPeriod[consumer][creator];
+        require(currenPeriod != SubscriptionPeriod.None, "Subscription was canceled.");
+
+        uint256 price = subscriptionPrice(creator, currenPeriod);
+        return _subscriberRenewalPrice[consumer][creator] < price;
     }
 
     function balanceOfDAI(address who) external view returns (uint256) {
@@ -184,6 +200,7 @@ contract FanticaDApp is Ownable {
 	// ===========================================================
 
     function sendTips(address creator, uint256 contentId, uint256 amount) external {
+        require(_subscriptionAccessIsFree[creator] == true, "Tips are only available for a free subscription.");
         require(creator != _msgSender(), "You can't send yourself tips.");
         require(amount > 0, "The amount is zero.");
 
@@ -273,9 +290,10 @@ contract FanticaDApp is Ownable {
     }
 
     // Used if the subscription price has increased.
-    function confirmNewSubscriptionPrice(address creator) external {
+    function confirmNewSubscriptionPrice(address creator, uint256 newPrice) external {
         SubscriptionPeriod currenPeriod = _subscriptionPeriod[_msgSender()][creator];
         require(currenPeriod != SubscriptionPeriod.None, "Subscription not found.");
+        require(newPrice == _subscriptionPrice[creator][currenPeriod], "Prices don't match.");
         _subscriberRenewalPrice[_msgSender()][creator] = _subscriptionPrice[creator][currenPeriod];
     }
 
