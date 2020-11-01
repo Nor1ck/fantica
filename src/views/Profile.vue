@@ -37,17 +37,27 @@
             </v-col>
           </v-row>
 
-            <v-switch @click="setSubscriptionAccess()" :loading="switchIsLoading" v-model="subscriptionAccessPaid" :label="`Subscription Access: ${subscriptionAccessPaid == 1 ? 'Paid' : 'Free' }`"></v-switch>
+            <v-switch @click="setSubscriptionAccess()" :loading="dappLoading" v-model="subscriptionAccessPaid" :label="`Subscription Access: ${subscriptionAccessPaid == 1 ? 'Paid' : 'Free' }`"></v-switch>
             <div v-if="subscriptionAccessPaid">
                 <v-row>
-                    <v-col cols="6">
+                    <v-col cols="5">
                         <v-text-field v-model="monthlyPrice" prefix="$" type="number" label="Montly Price"></v-text-field>
                     </v-col>
-                    <v-col cols="6">
+                    <v-col cols="5">
                         <v-text-field v-model="annualPrice" prefix="$" type="number" label="Annual Price"></v-text-field>
                     </v-col>
+                    <v-col class="mt-5" cols="2">
+                        <v-btn :loading="dappLoading" outlined rounded small color="indigo" @click="setSubscriptionPrice()">Set</v-btn>
+                    </v-col>
                 </v-row>
-                <v-btn :loading="setIsLoading" outlined rounded small color="indigo" @click="setSubscriptionPrice()">Set</v-btn>
+                <v-row>
+                    <v-col cols="10">
+                        <v-text-field v-model="contentPrice" prefix="$" type="number" label="Content Price"></v-text-field>
+                    </v-col>
+                    <v-col class="mt-5" cols="2">
+                        <v-btn :loading="dappLoading" outlined rounded small color="indigo" @click="setContentPrice()">Set</v-btn>
+                    </v-col>
+                </v-row>
             </div>
 
             <v-text-field v-model="profile.username" label="Display name"></v-text-field>
@@ -75,10 +85,10 @@ export default {
         avatarUploading: false,
         subscriptionAccessPaid: true,
         saveChangesIsLoading: false,
-        switchIsLoading: false,
-        setIsLoading: false,
+        dappLoading: false,
         monthlyPrice: 0,
         annualPrice: 0,
+        contentPrice: 0,
     };
   },
   watch: {
@@ -136,6 +146,14 @@ export default {
       this.monthlyPrice = Number(window.web3.utils.fromWei(monthlyPrice, 'ether')).toFixed(2)
       this.annualPrice = Number(window.web3.utils.fromWei(annualPrice, 'ether')).toFixed(2)
     },
+    async getContentPrice() {
+      let contract = new window.web3.eth.Contract(
+        this.fanticaDAppABI,
+        this.fanticaDAppAddress
+      );
+      let contentPrice = await contract.methods.contentPrice(this.metamaskAddress).call();
+      this.contentPrice = Number(window.web3.utils.fromWei(contentPrice, 'ether')).toFixed(2)
+    },
     async subscriptionAccessIsFree() {
       let contract = new window.web3.eth.Contract(
         this.fanticaDAppABI,
@@ -144,7 +162,7 @@ export default {
       this.subscriptionAccessPaid = !await contract.methods.subscriptionAccessIsFree(this.metamaskAddress).call();
     },
     async setSubscriptionPrice() {
-      this.setIsLoading = true;
+      this.dappLoading = true;
       try {
         let contract = new window.web3.eth.Contract(
           this.fanticaDAppABI,
@@ -155,11 +173,25 @@ export default {
         let annualPrice = window.web3.utils.toWei(this.annualPrice, 'ether');
         await contract.methods.setSubscriptionPrice(monthlyPrice, annualPrice).send();
       } finally {
-        this.setIsLoading = false;
+        this.dappLoading = false;
+      }
+    },
+    async setContentPrice() {
+      this.dappLoading = true;
+      try {
+        let contract = new window.web3.eth.Contract(
+          this.fanticaDAppABI,
+          this.fanticaDAppAddress,
+          { from: this.metamaskAddress }
+        );
+        let contentPrice = window.web3.utils.toWei(this.contentPrice, 'ether');
+        await contract.methods.setContentPrice(contentPrice).send();
+      } finally {
+        this.dappLoading = false;
       }
     },
     async setSubscriptionAccess() {
-      this.switchIsLoading = true;
+      this.dappLoading = true;
       try {
         let contract = new window.web3.eth.Contract(
           this.fanticaDAppABI,
@@ -170,7 +202,7 @@ export default {
       } catch {
         this.subscriptionAccessPaid = !this.subscriptionAccessPaid;
       } finally {
-        this.switchIsLoading = false;
+        this.dappLoading = false;
       }
       if (this.subscriptionAccessPaid) {
         this.subscriptionPrice();
@@ -213,6 +245,7 @@ export default {
   },
   mounted() {
     this.subscriptionPrice();
+    this.getContentPrice();
     this.subscriptionAccessIsFree();
     this.coverURL = this.$HOST + '/static/cover/' + this.metamaskAddress + '/cover.jpg'
     this.avatarURL = this.$HOST + '/static/avatar/' + this.metamaskAddress + '/avatar.jpg'
