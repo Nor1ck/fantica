@@ -6,12 +6,12 @@ import os
 import pathlib
 import redis
 import secrets
-import sha3
 import shutil
 
 from aiohttp import web
 from pymongo import MongoClient
 from web3 import Web3
+from Crypto.Hash import keccak as sha3
 
 
 ONE_MINUTE = 60
@@ -19,7 +19,7 @@ ONE_HOUR = ONE_MINUTE * 60
 ONE_DAY = ONE_HOUR * 24
 TESTNET = 'https://kovan.infura.io/v3/7e078b78f3ba433c8c5c8715a612487b'
 INFURA = TESTNET
-FANTICA_DAPP_ADDRESS = '0xd86e8c227118f4b7f8578bd54c23e0afd4502918'
+FANTICA_DAPP_ADDRESS = '0x610706d8f743cB0C33268178905D81cC02aF665B'
 web3 = Web3(Web3.HTTPProvider(TESTNET))
 rs_0 = redis.StrictRedis(decode_responses=True, db=5)  # TODO set to 0
 client = MongoClient()
@@ -59,8 +59,8 @@ async def md_cors_factory(request, handler):
 
 
 def keccak(seed):
-    k = sha3.keccak_256()
-    k.update(bytes(str(seed), encoding='utf-8'))
+    k = sha3.new(digest_bits=256)
+    k.update(seed.encode('utf8'))
     return k.hexdigest()
 
 
@@ -407,6 +407,10 @@ async def event_scan():
     pass
 
 
+async def api_ping(req):
+    return web.json_response({'msg': 'pong'})
+
+
 app = web.Application(middlewares=[md_cors_factory])
 
 app.router.add_route('POST', '/api/auth', api_auth)
@@ -417,6 +421,7 @@ app.router.add_route('POST', '/api/upload/{file_type}', api_upload_file)
 app.router.add_route('POST', '/api/profile', api_get_or_create_profile)
 app.router.add_route('POST', '/api/posts/delete', api_delete_post)
 
+app.router.add_route('GET', '/api/ping', api_ping)
 app.router.add_route('GET', '/api/profile/{address}', api_user_profile)
 app.router.add_route('GET', '/api/posts/recent', api_recent_posts)
 app.router.add_route('GET', '/api/posts/{address}', api_user_posts)
