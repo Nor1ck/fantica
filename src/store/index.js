@@ -679,7 +679,7 @@ function initialState() {
     uniswapAddress: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
 
     FNTAddress: '0x15929a84F902771c609DE9040feF42279F7f2E63', // kovan ERC20
-    fanticaDAppAddress: '0xd86e8c227118f4b7f8578bd54c23e0afd4502918', // kovan
+    fanticaDAppAddress: '0x610706d8f743cB0C33268178905D81cC02aF665B', // kovan
     DAIAddress: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa', // kovan
     WETHAddress: '0xd0A1E359811322d97991E03f863a0C30C2cF029C', // kovan
 
@@ -689,12 +689,12 @@ function initialState() {
     // WETHAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', // mainnet
 
     etherscanApiKeys: [
-      'NXNF4YHVJD9GDB2T2AD4JGIBHY8JD5CQ82',
-      'HAX4S8E74SXV2G62HFMDQ2SKKT1UUYF8N1',
-      'PYTY8S3PI675A67JJW6V4N67CES8WJRZGA'
+      'ACGU36X2VA12YT3YBPQ7VUG7BQ6EQTDWYX',
+      '2HY9Y2A4M5MH24XNKRR2581RX9WVEUSRI4',
+      '5NPAEM8E5SST92F9VTGT5CSNJ7EGATYCR8'
     ],
-    infuraURL: 'https://mainnet.infura.io/v3/065e178032804e5f89e634c5924e19c5',
-    infuraKovanURL: 'https://kovan.infura.io/v3/065e178032804e5f89e634c5924e19c5',
+    infuraURL: 'https://mainnet.infura.io/v3/7e078b78f3ba433c8c5c8715a612487b',
+    infuraKovanURL: 'https://kovan.infura.io/v3/7e078b78f3ba433c8c5c8715a612487b',
   }
 }
 
