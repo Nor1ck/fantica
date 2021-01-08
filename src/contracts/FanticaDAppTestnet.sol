@@ -87,7 +87,7 @@ contract FanticaDApp is Ownable {
     using SafeMath for uint256;
     enum SubscriptionPeriod { None, Monthly, Annual }
 
-    address private DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address private DAI = 0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa;
     uint256 private DEFAULT_CONTENT_PRICE =  1 ether; //   1 DAI (ether stands for 18 decimals)
     uint256 private DEFAULT_MONTHLY_PRICE =  10 ether; //  10 DAI
     uint256 private DEFAULT_ANNUAL_PRICE = 100 ether; // 100 DAI
@@ -141,7 +141,7 @@ contract FanticaDApp is Ownable {
     }
 
     function getExpiration(SubscriptionPeriod period) private view returns (uint256) {
-        return period == SubscriptionPeriod.Annual ? block.timestamp + 365 days : block.timestamp + 30 days;
+        return period == SubscriptionPeriod.Annual ? block.timestamp + 10 minutes : block.timestamp + 1 minutes;
     }
 
     function subscriptionPrice(address creator, SubscriptionPeriod period) public view returns (uint256) {
