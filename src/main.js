@@ -8,7 +8,7 @@ import axios from "axios";
 
 Vue.config.productionTip = false
 Vue.prototype.$http = axios;
-Vue.prototype.$HOST = 'http://localhost:3005';
+Vue.prototype.$HOST = 'http://64.225.5.32'; // 'http://localhost:3005';
 const VueCookie = require('vue-cookie');
 Vue.use(VueCookie);
 
