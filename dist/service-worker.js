@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/precache-manifest.564120ede5dc97be14748a09c74a47e5.js"
+  "/precache-manifest.0c9ad0fc77781655b65f95bc4d2f3fc1.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "fantica"});
